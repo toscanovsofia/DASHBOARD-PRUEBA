@@ -458,41 +458,7 @@ async function generateInsights({ spend, totalSpend, reach, impressions, freq, c
 }
 
 function fallbackInsights({ ctr, freq, cpc, conversions }) {
-  const insights = [];exports.handler = async function(event) {
-  const TOKEN = process.env.META_TOKEN;
-  const BASE = 'https://graph.facebook.com/v19.0';
-
-  const { path, params } = JSON.parse(event.body || '{}');
-  if (!path) return { statusCode: 400, body: JSON.stringify({ error: 'Missing path' }) };
-
-  const url = new URL(`${BASE}/${path}`);
-  url.searchParams.set('access_token', TOKEN);
-  if (params) {
-    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  }
-
-  try {
-    const r = await fetch(url.toString());
-    const data = await r.json();
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify(data)
-    };
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
-  }
-};
-
-[build]
-  functions = "netlify/functions"
-
+  const insights = [];
   if (freq > 3) insights.push({ tipo:'warning', icono:'⚠️', titulo:'Saturación de audiencia', descripcion:`La frecuencia (${freq.toFixed(1)}x) superó 3. Ampliar audiencia o rotar creatividades para evitar fatiga del usuario.` });
   if (ctr < 0.5) insights.push({ tipo:'warning', icono:'📉', titulo:'CTR bajo', descripcion:`CTR de ${ctr.toFixed(2)}% por debajo del benchmark (1-2%). Revisar copies y creatividades de los anuncios.` });
   if (conversions === 0) insights.push({ tipo:'info', icono:'🎯', titulo:'Configurar conversiones', descripcion:'No se detectaron conversiones. Verificar el pixel de Meta y los eventos de conversión en el sitio.' });
