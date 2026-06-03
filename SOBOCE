@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOBOCE Meta Ads Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8f9fa; color: #1a1a2e; }
+  .header { background: #fff; border-bottom: 1px solid #e8eaed; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo { font-size: 20px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px; }
+  .logo span { color: #E35217; }
+  .badge-live { background: #dcfce7; color: #166534; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; display: flex; align-items: center; gap: 4px; }
+  .dot-live { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .date-range { font-size: 13px; color: #64748b; }
+  .btn-refresh { background: #1a1a2e; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .btn-refresh:hover { background: #2d2d4e; }
+  .btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+  .main { padding: 24px; max-width: 1400px; }
+  .section-title { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; margin-top: 24px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 8px; }
+  .kpi-card { background: #fff; border: 1px solid #e8eaed; border-radius: 12px; padding: 16px; }
+  .kpi-label { font-size: 12px; color: #64748b; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+  .kpi-delta { font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 3px; }
+  .delta-up { color: #16a34a; }
+  .delta-down { color: #dc2626; }
+  .highlight-card { border-left: 4px solid #E35217; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .chart-card { background: #fff; border: 1px solid #e8eaed; border-radius: 12px; padding: 20px; }
+  .chart-title { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; }
+  .campaigns-table { background: #fff; border: 1px solid #e8eaed; border-radius: 12px; overflow: hidden; margin-top: 16px; }
+  .table-header { padding: 16px 20px; border-bottom: 1px solid #e8eaed; font-size: 14px; font-weight: 600; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f8f9fa; padding: 10px 16px; text-align: left; font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 12px 16px; border-top: 1px solid #f1f5f9; color: #1a1a2e; }
+  tr:hover td { background: #f8f9fa; }
+  .status-badge { padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .status-active { background: #dcfce7; color: #166534; }
+  .status-paused { background: #fef3c7; color: #92400e; }
+  .perf-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .perf-good { background: #16a34a; }
+  .perf-mid { background: #f59e0b; }
+  .perf-low { background: #dc2626; }
+  .insights-card { background: #fff; border: 1px solid #e8eaed; border-radius: 12px; padding: 20px; margin-top: 16px; }
+  .insights-header { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; }
+  .ai-badge { background: #ede9fe; color: #7c3aed; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+  .insight-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+  .insight-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .insight-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .icon-warning { background: #fef3c7; color: #92400e; }
+  .icon-success { background: #dcfce7; color: #166534; }
+  .icon-info { background: #dbeafe; color: #1d4ed8; }
+  .insight-text { font-size: 13px; color: #374151; line-height: 1.5; }
+  .insight-text strong { color: #1a1a2e; }
+  .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 100; font-size: 15px; color: #64748b; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #e8eaed; border-top-color: #E35217; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-card { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin: 20px 0; color: #991b1b; font-size: 14px; display: flex; align-items: flex-start; gap: 10px; }
+  .meta-logo { font-size: 11px; color: #1877f2; font-weight: 700; background: #dbeafe; padding: 2px 6px; border-radius: 4px; }
+  .period-selector { display: flex; gap: 8px; }
+  .period-btn { padding: 6px 12px; border: 1px solid #e8eaed; border-radius: 8px; font-size: 12px; cursor: pointer; background: #fff; color: #64748b; }
+  .period-btn.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+  .total-spent-banner { background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4e 100%); border-radius: 12px; padding: 20px 24px; color: #fff; display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .spent-label { font-size: 13px; opacity: 0.7; margin-bottom: 4px; }
+  .spent-amount { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+  .spent-period { font-size: 12px; opacity: 0.6; margin-top: 4px; }
+  .spent-right { text-align: right; }
+  .spent-daily { font-size: 13px; opacity: 0.7; }
+  .spent-daily-val { font-size: 20px; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <span>Conectando con Meta Ads API...</span>
+</div>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">SOB<span>O</span>CE <span style="font-size:13px;font-weight:400;color:#64748b;margin-left:4px">× Fuego Latam</span></div>
+    <div class="badge-live"><div class="dot-live"></div> EN VIVO</div>
+    <span class="meta-logo">META ADS</span>
+  </div>
+  <div class="header-right">
+    <div class="period-selector">
+      <button class="period-btn active" onclick="changePeriod(this,'today')">Hoy</button>
+      <button class="period-btn" onclick="changePeriod(this,'last_7d')">7 días</button>
+      <button class="period-btn" onclick="changePeriod(this,'last_30d')">30 días</button>
+      <button class="period-btn" onclick="changePeriod(this,'maximum')">Desde inicio</button>
+    </div>
+    <span class="date-range" id="dateRangeLabel"></span>
+    <button class="btn-refresh" id="refreshBtn" onclick="loadData()">
+      <i class="ti ti-refresh"></i> Actualizar
+    </button>
+  </div>
+</div>
+
+<div class="main" id="mainContent" style="display:none;">
+  <div id="errorContainer"></div>
+
+  <div class="total-spent-banner" id="spentBanner">
+    <div>
+      <div class="spent-label">💰 Total invertido acumulado</div>
+      <div class="spent-amount" id="totalSpent">$0</div>
+      <div class="spent-period" id="spentPeriod">cargando...</div>
+    </div>
+    <div class="spent-right">
+      <div class="spent-daily">Promedio diario</div>
+      <div class="spent-daily-val" id="avgDaily">$0</div>
+    </div>
+  </div>
+
+  <div class="section-title">Métricas principales</div>
+  <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi-card"><div class="kpi-label"><i class="ti ti-users"></i>Alcance</div><div class="kpi-value" id="kpi-reach">-</div></div>
+    <div class="kpi-card"><div class="kpi-label"><i class="ti ti-eye"></i>Impresiones</div><div class="kpi-value" id="kpi-impressions">-</div></div>
+    <div class="kpi-card"><div class="kpi-label"><i class="ti ti-repeat"></i>Frecuencia</div><div class="kpi-value" id="kpi-frequency">-</div></div>
+    <div class="kpi-card"><div class="kpi-label"><i class="ti ti-pointer"></i>CTR</div><div class="kpi-value" id="kpi-ctr">-</div></div>
+    <div class="kpi-card"><div class="kpi-label"><i class="ti ti-click"></i>CPC</div><div class="kpi-value" id="kpi-cpc">-</div></div>
+    <div class="kpi-card"><div class="kpi-label"><i class="ti ti-ad-2"></i>CPM</div><div class="kpi-value" id="kpi-cpm">-</div></div>
+    <div class="kpi-card"><div class="kpi-label"><i class="ti ti-target"></i>Conversiones</div><div class="kpi-value" id="kpi-conversions">-</div></div>
+    <div class="kpi-card highlight-card"><div class="kpi-label"><i class="ti ti-chart-line"></i>Clicks totales</div><div class="kpi-value" id="kpi-clicks">-</div></div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Gasto diario (últimos 7 días)</div>
+      <div style="position:relative;height:220px;"><canvas id="spendChart" role="img" aria-label="Evolución del gasto diario"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">CTR por campaña</div>
+      <div style="position:relative;height:220px;"><canvas id="ctrChart" role="img" aria-label="CTR por campaña"></canvas></div>
+    </div>
+  </div>
+
+  <div class="campaigns-table">
+    <div class="table-header"><i class="ti ti-speakerphone"></i>Campañas activas</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Campaña</th>
+          <th>Estado</th>
+          <th>Gasto</th>
+          <th>Impresiones</th>
+          <th>Clicks</th>
+          <th>CTR</th>
+          <th>CPC</th>
+          <th>Perf.</th>
+        </tr>
+      </thead>
+      <tbody id="campaignsBody">
+        <tr><td colspan="8" style="text-align:center;color:#64748b;padding:20px;">Cargando campañas...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insights-card">
+    <div class="insights-header">
+      <i class="ti ti-brain"></i> Insights de marketing
+      <span class="ai-badge">IA</span>
+    </div>
+    <div id="insightsContainer">
+      <div style="color:#64748b;font-size:13px;">Generando análisis...</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;color:#94a3b8;font-size:11px;padding:20px 0;">
+    Datos actualizados desde Meta Marketing API · Ad Account: <span id="accountLabel">-</span>
+  </div>
+</div>
+
+<script>
+const TOKEN = 'EAAjnn4xJupgBRnVE7ZAQAZA22tfe6ZCP7G7jrImLZA4aPDQCmvNYZC6aYeANEyIFbZCvh9ZBLPSqfSgfohU0eWwTgdAOOZA5qftw1fumCXZBGvHlYmZAX0pOMV94x3u4k4FA6BEWngMtqEyEZA5b2OZBwVRFEPFAak8i41uFgrxHZBgcr27ZCJdo9lxJ3527CMrI3KF4wsZBioAchZB8ItZAZAo4ejZAh3WrNeSZCSMt1OdwebvZBvTjC';
+const ACCOUNT_ID = '2506472253143704';
+const BASE = 'https://graph.facebook.com/v19.0';
+
+let currentPeriod = 'today';
+let spendChartInst = null;
+let ctrChartInst = null;
+let allData = {};
+
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '-';
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return Math.round(n).toLocaleString('es-AR');
+}
+function fmtMoney(n, currency='USD') {
+  if (!n) return '$0';
+  return new Intl.NumberFormat('es-AR', {style:'currency',currency,minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+}
+
+async function metaGet(path, params={}) {
+  const url = new URL(`${BASE}/${path}`);
+  url.searchParams.set('access_token', TOKEN);
+  for (const [k,v] of Object.entries(params)) url.searchParams.set(k, v);
+  const r = await fetch(url.toString());
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d;
+}
+
+function getPeriodDates(period) {
+  const today = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  const todayStr = fmt(today);
+  if (period === 'today') return { since: todayStr, until: todayStr, label: 'Hoy, ' + today.toLocaleDateString('es-AR') };
+  if (period === 'last_7d') {
+    const s = new Date(today); s.setDate(s.getDate()-6);
+    return { since: fmt(s), until: todayStr, label: 'Últimos 7 días' };
+  }
+  if (period === 'last_30d') {
+    const s = new Date(today); s.setDate(s.getDate()-29);
+    return { since: fmt(s), until: todayStr, label: 'Últimos 30 días' };
+  }
+  if (period === 'maximum') {
+    return { since: '2020-01-01', until: todayStr, label: 'Desde el inicio hasta hoy' };
+  }
+}
+
+function changePeriod(btn, period) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPeriod = period;
+  loadData();
+}
+
+async function loadData() {
+  const refreshBtn = document.getElementById('refreshBtn');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const mainContent = document.getElementById('mainContent');
+  const errorContainer = document.getElementById('errorContainer');
+
+  refreshBtn.disabled = true;
+  loadingOverlay.style.display = 'flex';
+  errorContainer.innerHTML = '';
+
+  try {
+    const { since, until, label } = getPeriodDates(currentPeriod);
+    document.getElementById('dateRangeLabel').textContent = label;
+    document.getElementById('accountLabel').textContent = ACCOUNT_ID;
+
+    const timeRange = JSON.stringify({ since, until });
+
+    // 1. Métricas globales de la cuenta
+    const insightsFields = 'spend,reach,impressions,frequency,ctr,cpc,cpm,clicks,actions,cost_per_action_type';
+    const accInsights = await metaGet(`act_${ACCOUNT_ID}/insights`, {
+      fields: insightsFields,
+      time_range: timeRange,
+      level: 'account'
+    });
+
+    const ins = accInsights.data && accInsights.data[0] ? accInsights.data[0] : {};
+    const spend = parseFloat(ins.spend || 0);
+    const reach = parseInt(ins.reach || 0);
+    const impressions = parseInt(ins.impressions || 0);
+    const freq = parseFloat(ins.frequency || 0);
+    const ctr = parseFloat(ins.ctr || 0);
+    const cpc = parseFloat(ins.cpc || 0);
+    const cpm = parseFloat(ins.cpm || 0);
+    const clicks = parseInt(ins.clicks || 0);
+    const conversions = ins.actions ? ins.actions.filter(a => ['purchase','lead','complete_registration'].includes(a.action_type)).reduce((s,a) => s+parseInt(a.value||0), 0) : 0;
+
+    // 2. Gasto acumulado total (desde inicio hasta hoy)
+    const totalInsights = await metaGet(`act_${ACCOUNT_ID}/insights`, {
+      fields: 'spend',
+      time_range: JSON.stringify({ since: '2020-01-01', until: new Date().toISOString().split('T')[0] }),
+      level: 'account'
+    });
+    const totalSpend = totalInsights.data && totalInsights.data[0] ? parseFloat(totalInsights.data[0].spend || 0) : spend;
+
+    // Días desde inicio (aproximado)
+    const daysDiff = Math.max(1, Math.round((new Date() - new Date('2020-01-01')) / 86400000));
+    const avgDaily = totalSpend / daysDiff;
+
+    // 3. Desglose diario (últimos 7 días para el gráfico)
+    const daily = await metaGet(`act_${ACCOUNT_ID}/insights`, {
+      fields: 'spend,date_start',
+      time_range: JSON.stringify({ since: (() => { const d=new Date(); d.setDate(d.getDate()-6); return d.toISOString().split('T')[0]; })(), until: new Date().toISOString().split('T')[0] }),
+      time_increment: 1,
+      level: 'account'
+    });
+
+    // 4. Campañas
+    const campaigns = await metaGet(`act_${ACCOUNT_ID}/campaigns`, {
+      fields: 'id,name,status,insights{spend,impressions,clicks,ctr,cpc}',
+      effective_status: JSON.stringify(['ACTIVE','PAUSED']),
+      limit: 20
+    });
+
+    // --- RENDER ---
+    document.getElementById('totalSpent').textContent = fmtMoney(totalSpend);
+    document.getElementById('spentPeriod').textContent = 'Total acumulado hasta hoy (' + new Date().toLocaleDateString('es-AR') + ')';
+    document.getElementById('avgDaily').textContent = fmtMoney(avgDaily) + '/día';
+
+    document.getElementById('kpi-reach').textContent = fmt(reach);
+    document.getElementById('kpi-impressions').textContent = fmt(impressions);
+    document.getElementById('kpi-frequency').textContent = freq.toFixed(2);
+    document.getElementById('kpi-ctr').textContent = ctr.toFixed(2) + '%';
+    document.getElementById('kpi-cpc').textContent = fmtMoney(cpc);
+    document.getElementById('kpi-cpm').textContent = fmtMoney(cpm);
+    document.getElementById('kpi-conversions').textContent = fmt(conversions);
+    document.getElementById('kpi-clicks').textContent = fmt(clicks);
+
+    // Gráfico gasto diario
+    const dailyData = (daily.data || []).sort((a,b) => a.date_start.localeCompare(b.date_start));
+    const dailyLabels = dailyData.map(d => {
+      const dt = new Date(d.date_start + 'T00:00:00');
+      return dt.toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit'});
+    });
+    const dailySpends = dailyData.map(d => parseFloat(d.spend || 0));
+
+    if (spendChartInst) spendChartInst.destroy();
+    spendChartInst = new Chart(document.getElementById('spendChart'), {
+      type: 'bar',
+      data: {
+        labels: dailyLabels,
+        datasets: [{
+          label: 'Gasto USD',
+          data: dailySpends,
+          backgroundColor: '#E35217',
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { grid: { color: '#f1f5f9' }, ticks: { callback: v => '$' + v.toFixed(0), font: { size: 11 }, color: '#64748b' } },
+          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#64748b' } }
+        }
+      }
+    });
+
+    // Gráfico CTR por campaña
+    const campData = (campaigns.data || []).filter(c => c.insights && c.insights.data && c.insights.data[0]);
+    const ctrNames = campData.map(c => c.name.length > 20 ? c.name.substring(0,20)+'...' : c.name);
+    const ctrVals = campData.map(c => parseFloat(c.insights.data[0].ctr || 0));
+
+    if (ctrChartInst) ctrChartInst.destroy();
+    const ctrHeight = Math.max(220, campData.length * 40 + 60);
+    document.getElementById('ctrChart').parentElement.style.height = ctrHeight + 'px';
+    ctrChartInst = new Chart(document.getElementById('ctrChart'), {
+      type: 'bar',
+      data: {
+        labels: ctrNames.length ? ctrNames : ['Sin datos'],
+        datasets: [{
+          label: 'CTR %',
+          data: ctrVals.length ? ctrVals : [0],
+          backgroundColor: '#1a1a2e',
+          borderRadius: 4,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: '#f1f5f9' }, ticks: { callback: v => v.toFixed(1)+'%', font: { size: 11 }, color: '#64748b' } },
+          y: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#64748b' } }
+        }
+      }
+    });
+
+    // Tabla campañas
+    const tbody = document.getElementById('campaignsBody');
+    if (campaigns.data && campaigns.data.length > 0) {
+      tbody.innerHTML = campaigns.data.map(c => {
+        const ci = c.insights && c.insights.data && c.insights.data[0] ? c.insights.data[0] : {};
+        const cSpend = parseFloat(ci.spend || 0);
+        const cImpr = parseInt(ci.impressions || 0);
+        const cClicks = parseInt(ci.clicks || 0);
+        const cCtr = parseFloat(ci.ctr || 0);
+        const cCpc = parseFloat(ci.cpc || 0);
+        const perfClass = cCtr > 1.5 ? 'perf-good' : cCtr > 0.5 ? 'perf-mid' : 'perf-low';
+        const statusClass = c.status === 'ACTIVE' ? 'status-active' : 'status-paused';
+        const statusLabel = c.status === 'ACTIVE' ? 'Activa' : 'Pausada';
+        return `<tr>
+          <td style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</td>
+          <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+          <td>${fmtMoney(cSpend)}</td>
+          <td>${fmt(cImpr)}</td>
+          <td>${fmt(cClicks)}</td>
+          <td>${cCtr.toFixed(2)}%</td>
+          <td>${cCpc > 0 ? fmtMoney(cCpc) : '-'}</td>
+          <td><span class="perf-dot ${perfClass}"></span></td>
+        </tr>`;
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:20px;">No hay campañas en este período</td></tr>';
+    }
+
+    // Insights de IA
+    generateInsights({ spend, totalSpend, reach, impressions, freq, ctr, cpc, cpm, clicks, conversions, campData, label });
+
+    mainContent.style.display = 'block';
+    loadingOverlay.style.display = 'none';
+    refreshBtn.disabled = false;
+
+  } catch (err) {
+    loadingOverlay.style.display = 'none';
+    mainContent.style.display = 'block';
+    refreshBtn.disabled = false;
+    errorContainer.innerHTML = `<div class="error-card">
+      <i class="ti ti-alert-circle" style="font-size:20px;flex-shrink:0;"></i>
+      <div><strong>Error al conectar con Meta Ads API</strong><br><span style="font-size:12px;margin-top:4px;display:block;">${err.message}</span>
+      <span style="font-size:12px;color:#dc2626;display:block;margin-top:6px;">Si el token venció, generá uno nuevo en Meta Business Manager.</span></div>
+    </div>`;
+    document.getElementById('campaignsBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:20px;">Error al cargar datos</td></tr>';
+  }
+}
+
+async function generateInsights({ spend, totalSpend, reach, impressions, freq, ctr, cpc, cpm, clicks, conversions, campData, label }) {
+  const container = document.getElementById('insightsContainer');
+  container.innerHTML = '<div style="color:#64748b;font-size:13px;display:flex;align-items:center;gap:8px;"><div class="spinner" style="width:18px;height:18px;border-width:2px;"></div>Analizando con IA...</div>';
+
+  const dataStr = `Período: ${label}. Gasto período: $${spend.toFixed(2)} USD. Total acumulado: $${totalSpend.toFixed(2)} USD. Alcance: ${reach}. Impresiones: ${impressions}. Frecuencia: ${freq.toFixed(2)}. CTR: ${ctr.toFixed(2)}%. CPC: $${cpc.toFixed(2)}. CPM: $${cpm.toFixed(2)}. Clicks: ${clicks}. Conversiones: ${conversions}. Campañas activas: ${campData.length}.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: 'Sos un experto en marketing digital y Meta Ads. Analizás datos de campañas y generás insights accionables en español (Argentina). Respondé SOLO con un JSON array de 4 objetos con esta estructura: [{tipo:"warning"|"success"|"info", icono:"emoji", titulo:"texto corto", descripcion:"texto descriptivo con número concreto y recomendación accionable"}]. Sin markdown ni backticks.',
+        messages: [{ role: 'user', content: `Analizá estos datos de Meta Ads para SOBOCE (empresa cementera boliviana) y generá 4 insights de marketing digital: ${dataStr}` }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content && data.content[0] ? data.content[0].text : '[]';
+    let insights;
+    try { insights = JSON.parse(text.replace(/```json|```/g,'').trim()); } catch { insights = []; }
+
+    if (insights.length) {
+      container.innerHTML = insights.map(i => {
+        const iconClass = i.tipo === 'warning' ? 'icon-warning' : i.tipo === 'success' ? 'icon-success' : 'icon-info';
+        return `<div class="insight-item">
+          <div class="insight-icon ${iconClass}">${i.icono || '💡'}</div>
+          <div class="insight-text"><strong>${i.titulo}</strong><br>${i.descripcion}</div>
+        </div>`;
+      }).join('');
+    } else {
+      fallbackInsights({ ctr, freq, cpc, conversions });
+    }
+  } catch {
+    fallbackInsights({ ctr, freq, cpc, conversions });
+  }
+}
+
+function fallbackInsights({ ctr, freq, cpc, conversions }) {
+  const insights = [];exports.handler = async function(event) {
+  const TOKEN = process.env.META_TOKEN;
+  const BASE = 'https://graph.facebook.com/v19.0';
+
+  const { path, params } = JSON.parse(event.body || '{}');
+  if (!path) return { statusCode: 400, body: JSON.stringify({ error: 'Missing path' }) };
+
+  const url = new URL(`${BASE}/${path}`);
+  url.searchParams.set('access_token', TOKEN);
+  if (params) {
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  }
+
+  try {
+    const r = await fetch(url.toString());
+    const data = await r.json();
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify(data)
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
+    };
+  }
+};
+
+[build]
+  functions = "netlify/functions"
+
+  if (freq > 3) insights.push({ tipo:'warning', icono:'⚠️', titulo:'Saturación de audiencia', descripcion:`La frecuencia (${freq.toFixed(1)}x) superó 3. Ampliar audiencia o rotar creatividades para evitar fatiga del usuario.` });
+  if (ctr < 0.5) insights.push({ tipo:'warning', icono:'📉', titulo:'CTR bajo', descripcion:`CTR de ${ctr.toFixed(2)}% por debajo del benchmark (1-2%). Revisar copies y creatividades de los anuncios.` });
+  if (conversions === 0) insights.push({ tipo:'info', icono:'🎯', titulo:'Configurar conversiones', descripcion:'No se detectaron conversiones. Verificar el pixel de Meta y los eventos de conversión en el sitio.' });
+  insights.push({ tipo:'success', icono:'✅', titulo:'Datos sincronizados', descripcion:'La integración con Meta Ads API funciona correctamente. Los datos se actualizan en tiempo real.' });
+  const container = document.getElementById('insightsContainer');
+  container.innerHTML = insights.map(i => {
+    const iconClass = i.tipo === 'warning' ? 'icon-warning' : i.tipo === 'success' ? 'icon-success' : 'icon-info';
+    return `<div class="insight-item">
+      <div class="insight-icon ${iconClass}">${i.icono}</div>
+      <div class="insight-text"><strong>${i.titulo}</strong><br>${i.descripcion}</div>
+    </div>`;
+  }).join('');
+}
+
+window.addEventListener('load', loadData);
+</script>
+</body>
+</html>
