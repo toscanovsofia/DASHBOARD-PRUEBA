@@ -194,7 +194,7 @@ function getPeriod(p) {
   if (p==='today') return {since:t, until:t, label:'Hoy, '+today.toLocaleDateString('es-AR')};
   if (p==='last_7d') { const s=new Date(today); s.setDate(s.getDate()-6); return {since:iso(s),until:t,label:'Últimos 7 días'}; }
   if (p==='last_30d') { const s=new Date(today); s.setDate(s.getDate()-29); return {since:iso(s),until:t,label:'Últimos 30 días'}; }
-  return {since:'2020-01-01', until:t, label:'Desde el inicio hasta hoy'};
+  return {since:'2022-01-01', until:t, label:'Desde el inicio hasta hoy'};
 }
 
 function changePeriod(btn, p) {
@@ -237,7 +237,7 @@ async function loadData() {
     // Total acumulado
     const tot = await metaGet(`act_${ACCOUNT_ID}/insights`, {
       fields: 'spend',
-      time_range: JSON.stringify({since:'2020-01-01', until: new Date().toISOString().split('T')[0]}),
+      time_range: JSON.stringify({since: (() => { const d=new Date(); d.setMonth(d.getMonth()-36); return d.toISOString().split('T')[0]; })(), until: new Date().toISOString().split('T')[0]}),
       level: 'account'
     });
     const totalSpend = parseFloat(tot.data?.[0]?.spend || spend);
